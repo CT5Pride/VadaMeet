@@ -1,3 +1,4 @@
+import{notificationAction,notificationAvailability}from '../_shared/notifications.ts';
 import { AccessToken } from 'npm:livekit-server-sdk@2.19.1';
 import { db,headers,response,HttpError,result,userFor,config,roomService,sweep,safeProfile,uuid,text,integer } from '../_shared/backend.ts';
 import { scheduleRounds,pairKey,phaseAt } from '../_shared/pairing.js';
@@ -7,6 +8,8 @@ Deno.serve(async req=>{
  const user=await userFor(req);if(Number(req.headers.get('content-length'))>16000)throw new HttpError(413,'Request too large.');
  const body=await req.json();const action=body.action;const input=body.input||{};
  if(!await result(db.rpc('vada_rate_limit',{p_user:user.id,p_bucket:'api',p_limit:100})))throw new HttpError(429,'Please wait a moment and try again.');
+ if(typeof action==='string'&&action.startsWith('notification-'))return response(await notificationAction(action,input,user));
+ if(action==='reminder-status'){const h=await result(db.from('hosts').select('user_id').eq('user_id',user.id).maybeSingle());if(!h)throw new HttpError(403,'Host access required.');const events=await result(db.from('events').select('id').eq('host_id',user.id));const ids=events.map((e:any)=>e.id);const jobs=ids.length?await result(db.from('notification_jobs').select('channel,status,error_code,updated_at').in('event_id',ids).order('updated_at',{ascending:false}).limit(50)):[];return response({available:notificationAvailability(),jobs})}
  if(action==='me'){const c=await config();if(c.hostEmail&&user.email?.toLowerCase()===c.hostEmail.toLowerCase())await result(db.from('hosts').upsert({user_id:user.id}));}
  const host=!!(await result(db.from('hosts').select('user_id').eq('user_id',user.id).maybeSingle()));
  const requireHost=()=>{if(!host)throw new HttpError(403,'Host access required.')};
@@ -25,7 +28,7 @@ Deno.serve(async req=>{
  if(action==='event-state'){
  const eventId=uuid(input.event_id);const reg=await result(db.from('registrations').select('event_id').eq('event_id',eventId).eq('user_id',user.id).maybeSingle());if(!reg)throw new HttpError(403,'Reserve a place first.');
  const e=await result(db.from('events').select('*').eq('id',eventId).single());const now=Date.now();const phase=phaseAt(e,now);
- if(['published','live'].includes(e.status))await result(db.from('registrations').update({checked_in_at:new Date(now).toISOString()}).eq('event_id',eventId).eq('user_id',user.id));
+ if(['published','live'].includes(e.status)&&now>=Date.parse(e.starts_at)-30*60e3)await result(db.from('registrations').update({checked_in_at:new Date(now).toISOString()}).eq('event_id',eventId).eq('user_id',user.id));
  const pairs=await result(db.from('pairings').select('*').eq('event_id',eventId).or(`user_a.eq.${user.id},user_b.eq.${user.id}`).order('round_number'));
  let active=pairs.find((p:any)=>p.round_number===phase.round)||null;let partner=null;
  if(active){const other=active.user_a===user.id?active.user_b:active.user_a;if(await blocked(user.id,other)){active={...active,closed_at:active.closed_at||new Date().toISOString()}}else partner=safeProfile(await result(db.from('profiles').select('*').eq('id',other).single()))}
@@ -47,6 +50,7 @@ Deno.serve(async req=>{
  const id=uuid(input.match_id);const m=await result(db.from('matches').select('*').eq('id',id).or(`user_a.eq.${user.id},user_b.eq.${user.id}`).maybeSingle());if(!m||await blocked(m.user_a,m.user_b))throw new HttpError(403,'Connection unavailable.');
  if(action==='send'){if(!await result(db.rpc('vada_rate_limit',{p_user:user.id,p_bucket:'messages',p_limit:12})))throw new HttpError(429,'Please wait before sending another message.');await result(db.rpc('vada_message',{p_user:user.id,p_match:id,p_body:text(input.body,2000)}))}
  return response({messages:await result(db.from('messages').select('*').eq('match_id',id).order('created_at',{ascending:false}).limit(100))})}
+ if(action==='host-analytics'){requireHost();return response(await result(db.rpc('vada_host_analytics',{p_host:user.id})))}
  if(action==='host-data'){requireHost();return response({events:await result(db.from('events').select('*').eq('host_id',user.id).order('starts_at',{ascending:false})),reports:await result(db.from('reports').select('*').eq('status','open').order('created_at',{ascending:false})),video_configured:!!(await config()).secret})}
  if(action==='create-event'){requireHost();const starts=new Date(input.starts_at);if(!Number.isFinite(starts.getTime())||starts.getTime()<Date.now()-60000)throw new HttpError(400,'Choose a future start time.');const e={host_id:user.id,title:text(input.title,120),description:text(input.description||'',2000,false),location:text(input.location||'UK-wide',100),starts_at:starts.toISOString(),min_age:integer(input.min_age,18,100),max_age:integer(input.max_age,18,100),capacity:integer(input.capacity,2,40),round_seconds:integer(input.round_seconds,30,600),break_seconds:30,total_rounds:integer(input.total_rounds,1,10),status:'published'};if(e.min_age>e.max_age)throw new HttpError(400,'Age range is reversed.');return response({event:await result(db.from('events').insert(e).select().single())})}
  if(action==='host-event'){requireHost();const e=await result(db.from('events').select('*').eq('id',uuid(input.event_id)).eq('host_id',user.id).single());const regs=await result(db.from('registrations').select('user_id,checked_in_at,profiles(name,age,interests)').eq('event_id',e.id));return response({event:e,registrations:regs,server_now:Date.now()})}

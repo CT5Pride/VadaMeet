@@ -75,3 +75,6 @@ Unit/integration tests exercise pairing across 2–40 participants, age/block co
 A real two-person audio/video call, account verification email delivery and host rehearsal still need to be exercised with invited people. Supabase Auth's Site URL is configured for the deployed frontend. Server-to-server LiveKit authentication was verified successfully through the deployed backend; the five-second cleanup job is active. For a public launch, configure a transactional email provider, publish the organiser's contact details, privacy notice/retention policy and service terms, and arrange event moderation. These operational steps are not represented as completed.
 
 Supabase's security advisor has no warning/error findings. Informational “RLS enabled, no policy” findings on personal tables are intentional: browser table grants are revoked and no browser policy permits access. The only browser-readable table is the published event catalogue; verified server endpoints handle personal data.
+
+## Latest additions
+Homepage connection gallery with optional slideshow; saved contrast, larger-text and reduced-motion controls; organiser-only footer link; host aggregate analytics; optional Loops/Twilio reminders. See NOTIFICATIONS.md for account, domain and secret setup. Sending remains disabled pending provider configuration.

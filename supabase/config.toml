@@ -3,3 +3,8 @@ project_id = "vada-meet"
 verify_jwt = true
 [functions.vada-sweep]
 verify_jwt = false
+
+[functions.vada-reminders]
+verify_jwt = false
+[functions.vada-twilio]
+verify_jwt = false

@@ -28,3 +28,5 @@ jobs:
       - run: pnpm exec supabase db push
       - run: pnpm exec supabase functions deploy vada-api --project-ref "$PROJECT_REF"
       - run: pnpm exec supabase functions deploy vada-sweep --project-ref "$PROJECT_REF"
+      - run: pnpm exec supabase functions deploy vada-reminders --project-ref "$PROJECT_REF"
+      - run: pnpm exec supabase functions deploy vada-twilio --project-ref "$PROJECT_REF"
