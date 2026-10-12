@@ -2,6 +2,12 @@
 
 Mobile-first, personality-first virtual speed dating for gay, bi and queer men, including trans men.
 
+Private pilot: https://vada-meet.awakesage65.chatgpt.site
+
+About: https://vada-meet.awakesage65.chatgpt.site/#/about
+
+Host dashboard: https://vada-meet.awakesage65.chatgpt.site/#/host
+
 ## What is implemented
 
 - LGBTQ visual identity and a dedicated About page.
@@ -66,4 +72,6 @@ In Supabase's Vault UI, update `LIVEKIT_URL`, `LIVEKIT_API_KEY`, and `LIVEKIT_AP
 
 Unit/integration tests exercise pairing across 2–40 participants, age/block constraints, odd attendance, timing boundaries, anonymous/authenticated database isolation, capacity, host-only start, private decisions, mutual matching and blocked messages. These tests run against an embedded PostgreSQL database, not a mocked SQL layer.
 
-A real two-person audio/video call, account verification email delivery and host rehearsal still need to be exercised with invited people. Configure Supabase Auth's Site URL and redirect allowlist for the deployed frontend. For a public launch, configure a transactional email provider, publish the organiser's contact details, privacy notice/retention policy and service terms, and arrange event moderation. These operational steps are not represented as completed.
+A real two-person audio/video call, account verification email delivery and host rehearsal still need to be exercised with invited people. Supabase Auth's Site URL is configured for the deployed frontend. Server-to-server LiveKit authentication was verified successfully through the deployed backend; the five-second cleanup job is active. For a public launch, configure a transactional email provider, publish the organiser's contact details, privacy notice/retention policy and service terms, and arrange event moderation. These operational steps are not represented as completed.
+
+Supabase's security advisor has no warning/error findings. Informational “RLS enabled, no policy” findings on personal tables are intentional: browser table grants are revoked and no browser policy permits access. The only browser-readable table is the published event catalogue; verified server endpoints handle personal data.
