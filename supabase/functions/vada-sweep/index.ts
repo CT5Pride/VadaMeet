@@ -1,0 +1,2 @@
+import {config,sweep,response,roomService} from '../_shared/backend.ts';
+Deno.serve(async req=>{if(req.method!=='POST')return response({error:'POST required'},405);try{const c=await config();const secret=req.headers.get('x-vada-cron');if(!c.cron||!secret||secret!==c.cron)return response({error:'Unauthorized'},401);const body=await req.json();if(body.health===true){await roomService(c).listRooms([]);return response({livekit_reachable:true})}return response({closed:await sweep(c)})}catch{return response({error:'Round cleanup failed'},500)}});

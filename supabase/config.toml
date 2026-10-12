@@ -1,0 +1,5 @@
+project_id = "vada-meet"
+[functions.vada-api]
+verify_jwt = true
+[functions.vada-sweep]
+verify_jwt = false
